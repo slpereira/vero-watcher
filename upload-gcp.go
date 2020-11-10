@@ -63,7 +63,7 @@ func (u *UploadGcs) Execute(event *FileEvent) error {
 	}
 	log.Debugf("uploading %s to %s as %s", source, u.destBucket, dest)
 	if runtime.GOOS == "windows" {
-		dest = strings.Replace(dest, "\\", "/", -1)
+		dest = strings.ReplaceAll(dest, "\\", "/")
 	}
 	object := b.Object(dest)
 	file, err := os.Open(source)

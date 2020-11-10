@@ -97,8 +97,12 @@ func TestWatcher_StartTwice(t *testing.T) {
 				command: tt.fields.command,
 			}
 			_ = w.Start()
-			if err := w.Start(); err == nil {
+			err := w.Start()
+			if err == nil {
 				t.Error("Start does not fail for the second call")
+			}
+			if err != ErrSkip {
+				t.Errorf("Start fail for the second call: %v", err)
 			}
 			_ = w.Stop()
 			if err := w.Stop(); err == nil {
