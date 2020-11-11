@@ -80,6 +80,7 @@ func (u *UploadGcs) Execute(event *FileEvent) error {
 		return errors.New(fmt.Sprintf("%s: 0 bytes file", event.Name))
 	}
 	writer := object.NewWriter(context.Background())
+	writer.Metadata = make(map[string]string)
 	writer.Metadata["source-path"] = event.Name
 	bufferSize := int64(math.Min(float64(stat.Size()), float64(u.bufferSize)))
 	buffer := make([]byte, bufferSize)
