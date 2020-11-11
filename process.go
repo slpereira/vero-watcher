@@ -22,8 +22,9 @@ type Process struct {
 	t       *time.Ticker
 	cmd     ProcessCommand
 	sem     *semaphore.Weighted // control how many commands are processed in parallel
-	mu      sync.Mutex // this lock is to avoid stop the process while executing commands
+	mu      sync.Mutex          // this lock is to avoid stop the process while executing commands
 	wg      sync.WaitGroup
+	filters []DirFilter
 }
 
 func NewProcess(paths []string, q Queue, filters []DirFilter, cmd ProcessCommand,
@@ -39,11 +40,12 @@ func NewProcess(paths []string, q Queue, filters []DirFilter, cmd ProcessCommand
 	w := NewDirWatcher(ps, &QueueWatcherCommand{q}, DefaultWatcherChannelSize, filters,
 		notify.Create, notify.Write, notify.Rename)
 	return &Process{
-		w:   w,
-		q:   q,
-		t:   time.NewTicker(processInterval),
-		cmd: cmd,
-		sem: semaphore.NewWeighted(parallel),
+		w:       w,
+		q:       q,
+		t:       time.NewTicker(processInterval),
+		cmd:     cmd,
+		sem:     semaphore.NewWeighted(parallel),
+		filters: filters,
 	}
 
 }
@@ -53,6 +55,9 @@ func (p *Process) Start() error {
 		return ErrAlreadyRunning
 	}
 	if err := p.q.Open(); err != nil {
+		return err
+	}
+	if err := p.q.Restore(p.filters); err != nil {
 		return err
 	}
 	if err := p.w.Start(); err != nil {
