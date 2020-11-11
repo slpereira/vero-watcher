@@ -34,6 +34,10 @@ func NewQueueCommand(q Queue) *QueueWatcherCommand {
 func (q *QueueWatcherCommand) Process(e notify.EventInfo) error {
 	info, err := os.Stat(e.Path())
 	if err != nil {
+		// in the case of renamed files there is an event for the old file name
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 	return q.q.AddFileEvent(&FileEvent{

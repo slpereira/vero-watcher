@@ -85,6 +85,10 @@ func (p *Process) Stop() error {
 	return err
 }
 
+func (p *Process) Wait() {
+
+}
+
 // processQueue is the go routine responsible to process all files in the queue
 func (p *Process) processQueue() {
 	for {

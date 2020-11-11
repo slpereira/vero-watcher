@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -257,8 +258,16 @@ func (q *QueueBolt) processLostFiles(filters []DirFilter) error {
 			if err := d.Decode(&dev); err != nil {
 				return err
 			}
+			log.Infof("looking for changes in %s after %v", dev.Name, dev.ModTime)
 			files, err := ioutil.ReadDir(dev.Name)
 			if err != nil {
+				if os.IsNotExist(err) {
+					log.Infof("directory does not exists anymore: %s", dev.Name)
+					if err = c.Delete(); err != nil {
+						return err
+					}
+					continue
+				}
 				return err
 			}
 			lastModTime := dev.ModTime

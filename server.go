@@ -30,3 +30,4 @@ func (h *HttpServer) HandlerQueueView(w http.ResponseWriter, req *http.Request) 
 		log.Error(err)
 	}
 }
+
