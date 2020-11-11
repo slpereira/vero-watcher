@@ -167,6 +167,9 @@ func (q *QueueBolt) GetFileEvents() ([]*FileEvent, error) {
 			return err
 		}
 		b := tx.Bucket([]byte(FileEventBucket))
+		if b == nil {
+			return nil
+		}
 		c := b.Cursor()
 		for key, value := c.First(); key != nil; key, value = c.Next() {
 			fev, err := q.extractFileEvent(value)
