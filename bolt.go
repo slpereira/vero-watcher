@@ -36,10 +36,10 @@ func (q *QueueBolt) GetStatistics() (*QueueStatistics, error) {
 		}
 		b := tx.Bucket([]byte(DirEventBucket))
 		if b != nil {
-			if err := b.ForEach(func(k, v []byte) error {
+			if err = b.ForEach(func(k, v []byte) error {
 				d := gob.NewDecoder(bytes.NewReader(v))
 				var dev DirEvent
-				if err := d.Decode(&dev); err != nil {
+				if err = d.Decode(&dev); err != nil {
 					return err
 				}
 				dirEvents = append(dirEvents, &dev)
