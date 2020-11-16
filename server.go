@@ -24,7 +24,9 @@ func (h *HttpServer) HandlerQueueView(w http.ResponseWriter, req *http.Request) 
 	if err != nil {
 		log.Errorf("Processed request with error [%s]", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		jsonEncoded.Encode(AppError{Message: err.Error()})
+		if err := jsonEncoded.Encode(&AppError{Message: err.Error()}); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -34,4 +36,3 @@ func (h *HttpServer) HandlerQueueView(w http.ResponseWriter, req *http.Request) 
 		log.Error(err)
 	}
 }
-

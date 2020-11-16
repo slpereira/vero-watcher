@@ -26,7 +26,7 @@ func (q *QueueBolt) GetStatistics() (*QueueStatistics, error) {
 	var queuedEvents []*FileEvent
 	var processingEvents []*FileEvent
 	var dirEvents []*DirEvent
-	q.db.View(func(tx *bolt.Tx) (err error) {
+	if err := q.db.View(func(tx *bolt.Tx) (err error) {
 		queuedEvents, err = q.viewFileEvents(tx, FileEventBucket)
 		if err != nil {
 			return
@@ -50,7 +50,9 @@ func (q *QueueBolt) GetStatistics() (*QueueStatistics, error) {
 			}
 		}
 		return
-	})
+	}); err != nil {
+		return nil,  err
+	}
 	return &QueueStatistics{
 		QueuedEvents:     queuedEvents,
 		ProcessingEvents: processingEvents,
