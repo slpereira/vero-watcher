@@ -14,6 +14,10 @@ type AppError struct {
 	Message string
 }
 
+func NewHttpServer(queue Queue, port string) *HttpServer {
+	return &HttpServer{q: queue}
+}
+
 func (h *HttpServer) HandlerQueueView(w http.ResponseWriter, req *http.Request) {
 	jsonEncoded := json.NewEncoder(w)
 	s, err := h.q.GetStatistics()
