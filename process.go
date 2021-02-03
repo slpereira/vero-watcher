@@ -109,13 +109,13 @@ func (p *Process) processQueue() {
 					if err := p.sem.Acquire(context.Background(), 1); err != nil {
 						log.Errorf("cannot acquire semaphore for %s: %v", ev.Name, err)
 					} else {
+						p.wg.Add(1)
 						go func(ev *FileEvent) {
-							log.Infof("processing file:%s", ev.Name)
-							p.wg.Add(1)
 							defer func() {
 								p.sem.Release(1)
 								p.wg.Done()
 							}()
+							log.Infof("processing file:%s", ev.Name)
 							if err = p.cmd.Execute(ev); err != nil {
 								log.Errorf("cannot execute command for %s: %v", ev.Name, err)
 							} else {

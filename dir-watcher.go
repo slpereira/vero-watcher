@@ -22,8 +22,6 @@ type DirWatcher struct {
 	filters []DirFilter
 }
 
-
-
 func NewDirWatcher(paths []string, command DirWatcherCommand, size int, filters []DirFilter, events ...notify.Event) *DirWatcher {
 	return &DirWatcher{
 		paths:   paths,
@@ -57,7 +55,6 @@ func (w *DirWatcher) Stop() error {
 	close(w.c)
 	return nil
 }
-
 
 func (w *DirWatcher) receiver() {
 	for {
