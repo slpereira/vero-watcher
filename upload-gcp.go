@@ -61,7 +61,7 @@ func (u *UploadGcs) Execute(event *FileEvent) error {
 	} else if u.extractBase {
 		dest = strings.Replace(event.Name, u.base, "", 1)
 	}
-	log.Debugf("uploading %s to %s as %s", source, u.destBucket, dest)
+	log.Infof("uploading %s to %s as %s", source, u.destBucket, dest)
 	if runtime.GOOS == "windows" {
 		dest = strings.ReplaceAll(dest, "\\", "/")
 	}

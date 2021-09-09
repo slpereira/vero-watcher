@@ -16,19 +16,20 @@ type ProcessCommand interface {
 }
 
 type Process struct {
-	w       *DirWatcher
-	q       Queue
-	running atomic.Bool
-	t       *time.Ticker
-	cmd     ProcessCommand
-	sem     *semaphore.Weighted // control how many commands are processed in parallel
-	mu      sync.Mutex          // this lock is to avoid stop the process while executing commands
-	wg      sync.WaitGroup
-	filters []DirFilter
+	w            *DirWatcher
+	q            Queue
+	running      atomic.Bool
+	t            *time.Ticker
+	cmd          ProcessCommand
+	sem          *semaphore.Weighted // control how many commands are processed in parallel
+	mu           sync.Mutex          // this lock is to avoid stop the process while executing commands
+	wg           sync.WaitGroup
+	filters      []DirFilter
+	doNotRestore bool
 }
 
 func NewProcess(paths []string, q Queue, filters []DirFilter, cmd ProcessCommand,
-	parallel int64, recursive bool, processInterval time.Duration) *Process {
+	parallel int64, recursive bool, processInterval time.Duration, doNotRestore bool) *Process {
 	var ps []string
 	if recursive {
 		for _, p := range paths {
@@ -40,12 +41,13 @@ func NewProcess(paths []string, q Queue, filters []DirFilter, cmd ProcessCommand
 	w := NewDirWatcher(ps, &QueueWatcherCommand{q}, DefaultWatcherChannelSize, filters,
 		notify.Create, notify.Write, notify.Rename)
 	return &Process{
-		w:       w,
-		q:       q,
-		t:       time.NewTicker(processInterval),
-		cmd:     cmd,
-		sem:     semaphore.NewWeighted(parallel),
-		filters: filters,
+		w:            w,
+		q:            q,
+		t:            time.NewTicker(processInterval),
+		cmd:          cmd,
+		sem:          semaphore.NewWeighted(parallel),
+		filters:      filters,
+		doNotRestore: doNotRestore,
 	}
 
 }
@@ -57,8 +59,12 @@ func (p *Process) Start() error {
 	if err := p.q.Open(); err != nil {
 		return err
 	}
-	if err := p.q.Restore(p.filters); err != nil {
-		return err
+	if !p.doNotRestore {
+		if err := p.q.Restore(p.filters); err != nil {
+			return err
+		}
+	} else {
+		log.Info("restore is disabled....")
 	}
 	if err := p.w.Start(); err != nil {
 		return err
@@ -83,10 +89,6 @@ func (p *Process) Stop() error {
 	p.t.Stop()
 	p.running.Store(false)
 	return err
-}
-
-func (p *Process) Wait() {
-
 }
 
 // processQueue is the go routine responsible to process all files in the queue
@@ -125,6 +127,10 @@ func (p *Process) processQueue() {
 							}
 						}(ev)
 					}
+				}
+				p.wg.Wait()
+				if err = p.q.RestoreProcessingQueue(); err != nil {
+					log.Errorf("cannot restore queue: %v", err)
 				}
 			}
 			p.mu.Unlock()

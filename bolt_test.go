@@ -73,7 +73,7 @@ func TestQueueBolt_Restore(t *testing.T) {
 }
 
 func TestQueueBolt_restoreProcessingBucket(t *testing.T) {
-	t.Run("restoreProcessingBucket", func(t *testing.T) {
+	t.Run("RestoreProcessingQueue", func(t *testing.T) {
 		os.Remove(dbPath)
 		defer os.Remove(dbPath)
 		q := NewQueueBolt(dbPath, time.Nanosecond).(*QueueBolt)
@@ -95,8 +95,8 @@ func TestQueueBolt_restoreProcessingBucket(t *testing.T) {
 		q.Close()
 		q.Open()
 		// restore
-		if err := q.restoreProcessingBucket(); err != nil {
-			t.Errorf("restoreProcessingBucket() error = %v", err)
+		if err := q.RestoreProcessingQueue(); err != nil {
+			t.Errorf("RestoreProcessingQueue() error = %v", err)
 		}
 		fevs2, err := q.GetFileEvents()
 		if !reflect.DeepEqual(fevs, fevs2) {
@@ -107,7 +107,7 @@ func TestQueueBolt_restoreProcessingBucket(t *testing.T) {
 }
 
 func TestQueueBolt_processLostFiles(t *testing.T) {
-	t.Run("restoreProcessingBucket", func(t *testing.T) {
+	t.Run("RestoreProcessingQueue", func(t *testing.T) {
 		os.Remove(dbPath)
 		defer os.Remove(dbPath)
 		q := NewQueueBolt(dbPath, time.Nanosecond).(*QueueBolt)
@@ -141,7 +141,7 @@ func TestQueueBolt_processLostFiles(t *testing.T) {
 			return ErrSkip
 		}
 		if err := q.processLostFiles([]DirFilter{df}); err != nil {
-			t.Errorf("restoreProcessingBucket() error = %v", err)
+			t.Errorf("RestoreProcessingQueue() error = %v", err)
 		}
 		fevs2, err := q.GetFileEvents()
 		found := false

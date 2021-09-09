@@ -36,7 +36,7 @@ func TestNewProcessNoFilter(t *testing.T) {
 		file := filepath.Join(curr, "test.txt")
 		os.Remove(file)
 		defer os.Remove(file)
-		p := NewProcess([]string{curr}, q, nil, c, 1, false, time.Second)
+		p := NewProcess([]string{curr}, q, nil, c, 1, false, time.Second, true)
 		if err := p.Start(); err != nil {
 			t.Error(err)
 		}
@@ -65,7 +65,7 @@ func TestNewProcessFilter(t *testing.T) {
 			}
 			return ErrSkip
 		}
-		p := NewProcess([]string{curr}, q, []DirFilter{df}, c, 1, false, time.Second)
+		p := NewProcess([]string{curr}, q, []DirFilter{df}, c, 1, false, time.Second, true)
 		if err := p.Start(); err != nil {
 			t.Error(err)
 		}

@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const WarnExcessiveRetry = 10
+
 // QueueBolt is a queue implementation backed by bolt-db
 type QueueBolt struct {
 	path             string
@@ -122,11 +124,19 @@ func (q *QueueBolt) addFileEventInternally(tx *bolt.Tx, value *FileEvent) error 
 		value.Event |= f.Event
 	}
 	// check if there is some event already added
-	var buffer bytes.Buffer
-	if err := gob.NewEncoder(&buffer).Encode(&value); err != nil {
+	buffer, err := q.encodeFileEvent(value)
+	if err != nil {
 		return err
 	}
-	return b.Put([]byte(value.Name), buffer.Bytes())
+	return b.Put([]byte(value.Name), buffer)
+}
+
+func (q *QueueBolt) encodeFileEvent(value *FileEvent) ([]byte, error) {
+	var buffer bytes.Buffer
+	if err := gob.NewEncoder(&buffer).Encode(&value); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
 
 func (q *QueueBolt) addDirEventInternally(tx *bolt.Tx, value *DirEvent) error {
@@ -214,18 +224,18 @@ func (q *QueueBolt) RemoveFileEvent(value *FileEvent) error {
 // Restore look for inconsistent keys in the queue
 // Must be called before any processing
 func (q *QueueBolt) Restore(filters []DirFilter) error {
-	log.Info("restore...")
+	log.Info("restoring...")
 	if err := q.processLostFiles(filters); err != nil {
 		return err
 	}
-	if err := q.restoreProcessingBucket(); err != nil {
+	if err := q.RestoreProcessingQueue(); err != nil {
 		return err
 	}
 	return nil
 }
 
-// restoreProcessingBucket move the keys in the processing bucket back to the queue
-func (q *QueueBolt) restoreProcessingBucket() error {
+// RestoreProcessingQueue move the keys in the processing bucket back to the queue
+func (q *QueueBolt) RestoreProcessingQueue() error {
 	return q.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ProcessingEventBucket))
 		if b == nil {
@@ -236,7 +246,17 @@ func (q *QueueBolt) restoreProcessingBucket() error {
 		c := b.Cursor()
 		for key, value := c.First(); key != nil; key, value = c.Next() {
 			log.Infof("restoring file to main queue: %s", string(key))
-			dest.Put(key, value)
+			fe, err := q.extractFileEvent(value)
+			if err != nil  {
+				return err
+			}
+			fe.ReprocessCount += 1
+			fe.LastTry = time.Now()
+			if fe.ReprocessCount >= WarnExcessiveRetry {
+				log.Warnf("file (%s) reprocessed too many times (%d)", fe.Name, fe.ReprocessCount)
+			}
+			buffer, err := q.encodeFileEvent(fe)
+			dest.Put(key, buffer)
 			if err := c.Delete(); err != nil {
 				return err
 			}

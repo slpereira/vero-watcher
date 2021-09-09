@@ -9,25 +9,26 @@ import (
 var (
 	ErrAlreadyRunning = errors.New("already running")
 	ErrNotRunning     = errors.New("not running")
-	ErrSkip 		  = errors.New("skip")
+	ErrSkip           = errors.New("skip")
 )
 
 const (
 	DefaultWatcherChannelSize = 128
-	FileEventBucket = "file-event"
-	DirEventBucket = "dir-event"
-	ProcessingEventBucket = "file-event-processing"
+	FileEventBucket           = "file-event"
+	DirEventBucket            = "dir-event"
+	ProcessingEventBucket     = "file-event-processing"
 )
 
 // FileEvent is a representation of a file event
 type FileEvent struct {
-	Name    string // the complete path and name of the file
-	ModTime time.Time
-	Event   notify.Event
+	Name           string // the complete path and name of the file
+	ModTime        time.Time
+	Event          notify.Event
+	ReprocessCount int
+	LastTry        time.Time
 }
 
 type DirEvent struct {
 	Name    string
 	ModTime time.Time
 }
-

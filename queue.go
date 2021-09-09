@@ -14,6 +14,7 @@ type Queue interface {
 	GetFileEvents() ([]*FileEvent, error)
 	RemoveFileEvent(value *FileEvent) error
 	GetStatistics() (*QueueStatistics, error)
+	RestoreProcessingQueue() error
 }
 
 type QueueStatistics struct {
